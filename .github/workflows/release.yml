@@ -1,33 +1,44 @@
-name: Release final version
+name: Release Go structs
 
-on:
+"on":
   workflow_dispatch:
     inputs:
+      ygot_version:
+        description: "Ygot version (vX.Y.Z). Defaults to v0.24.4"
+        required: false
+        type: string
       srlinux_version:
-        description: 'srlinux release (vYY.M.A)'
+        description: "SR Linux release (vYY.M.A)"
         required: true
         type: string
-      commit_sha:
-        description: 'Commit SHA'
-        required: true
+      release_suffix:
+        description: "Package release suffix that appends to the SR Linux version. E.g. 22.11.1-rc1. Defaults to rc1"
+        required: false
         type: string
+        default: "rc1"
+env:
+  GOVER: 1.18.4
+
 jobs:
   build:
-    name: Final Release
+    name: Release
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout local repo
-        uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v3
         with:
-          ref: generated
-          path: work/
+          go-version: ${{ env.GOVER }}
 
-      - name: tag major and minor versions
+      - name: Set env vars
         run: |
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git tag -a ${{ inputs.srlinux_version }} ${{ inputs.commit_sha }} -m "Release ${{ inputs.srlinux_version }}"
-          git push origin ${{ inputs.srlinux_version }} 
-        working-directory: work
+          echo "YGOT_VERSION=${{ inputs.ygot_version }}" >> $GITHUB_ENV
+          echo "SRLINUX_VERSION=${{ inputs.srlinux_version }}" >> $GITHUB_ENV
+          echo "RELEASE_SUFFIX=${{ inputs.release_suffix }}" >> $GITHUB_ENV
 
+      - uses: actions/checkout@v3
+      # add `actions`` git user credentials
+      - uses: fregante/setup-git-user@v1
+
+      - name: Publish structs
+        run: make release
