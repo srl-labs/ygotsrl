@@ -38,9 +38,11 @@ checkout-branch: ## Checkout to the branch matching the SR Linux's major release
 		echo "branch ${SRL_MAJOR_VER} doesn't exist yet, we will create it"
 		git checkout --orphan ${SRL_MAJOR_VER}
 
-		# removing all git checked-in files keeping .gitignore
+		# removing all git checked-in files keeping .gitignore and license files
 		# https://stackoverflow.com/questions/36753573/how-do-i-exclude-files-from-git-ls-files
-		git rm -rf -- . ':!:.gitignore'
+		git rm -rf .github
+		git rm -rf Makefile
+		git rm -rf README.md
 		
 		git add .gitignore
 		git commit -a -m "Init branch"
