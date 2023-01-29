@@ -5,8 +5,9 @@ name: Release Go structs
     inputs:
       ygot_version:
         description: "Ygot version (vX.Y.Z). Defaults to v0.24.4"
-        required: false
+        required: true
         type: string
+        default: 0.24.4
       srlinux_version:
         description: "SR Linux release (vYY.M.A)"
         required: true
