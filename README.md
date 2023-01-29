@@ -1,5 +1,5 @@
 
-<p align=center><a href="https://learn.srlinux.dev"><img src=https://gitlab.com/rdodin/pics/-/wikis/uploads/acd6440377f6e31d261ed1db57220ab1/srl-ygotsrl.svg?sanitize=true /></a></p>
+<p align=center><a href="https://learn.srlinux.dev"><img src=https://gitlab.com/rdodin/pics/-/wikis/uploads/71f0c7b44733ec328c40ab9eae996cb7/srl-ygotsrl-2.svg?sanitize=true /></a></p>
 
 ---
 
