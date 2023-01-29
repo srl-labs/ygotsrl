@@ -4,10 +4,10 @@ name: Release Go structs
   workflow_dispatch:
     inputs:
       ygot_version:
-        description: "Ygot version (vX.Y.Z). Defaults to v0.24.4"
+        description: "Ygot version (vX.Y.Z)."
         required: true
         type: string
-        default: 0.24.4
+        default: v0.24.4
       srlinux_version:
         description: "SR Linux release (vYY.M.A)"
         required: true
