@@ -1,146 +1,44 @@
-name: Release new candidate version
+name: Release Go structs
 
-on:
+"on":
   workflow_dispatch:
     inputs:
       ygot_version:
-        description: 'ygot version (vX.Y.Z)'     
+        description: "Ygot version (vX.Y.Z). Defaults to v0.24.4"
         required: false
         type: string
-        #default: 'v0.24.2'
       srlinux_version:
-        description: 'srlinux release (vYY.M.A)'
-        required: false
+        description: "SR Linux release (vYY.M.A)"
+        required: true
         type: string
-        #default: 'v22.6.2'
       release_suffix:
-        description: 'package release suffix'
+        description: "Package release suffix that appends to the SR Linux version. E.g. 22.11.1-rc1. Defaults to rc1"
         required: false
         type: string
-        default: 'rc1'
+        default: "rc1"
 env:
-  GOVER: 1.17.11 
+  GOVER: 1.18.4
 
 jobs:
   build:
-    name: Build
+    name: Release
     runs-on: ubuntu-latest
 
     steps:
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: ${{ env.GOVER }}
-        id: go
 
-      - name: Set the ygot version based on the workflow input
-        if: ${{ inputs.ygot_version }} 
+      - name: Set env vars
         run: |
           echo "YGOT_VERSION=${{ inputs.ygot_version }}" >> $GITHUB_ENV
-
-      - name: Set the SRLinux version based on the workflow input
-        if: ${{ inputs.srlinux_version }} 
-        run: |
           echo "SRLINUX_VERSION=${{ inputs.srlinux_version }}" >> $GITHUB_ENV
-          
-      - name: Fetch latest ygot release from Github API
-        if: ${{ ! inputs.ygot_version }} 
-        run: |
-          echo "YGOT_VERSION=$(curl -Ls https://api.github.com/repos/openconfig/ygot/releases/latest | jq -rc '.name')" >> $GITHUB_ENV
+          echo "RELEASE_SUFFIX=${{ inputs.release_suffix }}" >> $GITHUB_ENV
 
-      - name: Fetch latest SRLinux release from Github API
-        if: ${{ ! inputs.srlinux_version }} 
-        run: |
-          echo "SRLINUX_VERSION=$(curl -Ls https://api.github.com/repos/nokia/srlinux-yang-models/tags | jq -rc '.[0].name')" >> $GITHUB_ENV
+      - uses: actions/checkout@v3
+      # add `actions`` git user credentials
+      - uses: fregante/setup-git-user@v1
 
-      - name: Set the Go Module version according to the SRLinux version
-        run: |
-          echo "MODULE_VERSION=$(echo $SRLINUX_VERSION | cut -d. -f1)" >> $GITHUB_ENV
-
-      - name: Install openconfig/ygot/generator
-        run: |
-          go install github.com/openconfig/ygot/generator@${{ env.YGOT_VERSION }}
-
-      - name: Check out SRLinux YANG Models
-        uses: actions/checkout@v3
-        with:
-          repository: nokia/srlinux-yang-models
-          ref: ${{ env.SRLINUX_VERSION }}
-          path: nokia/
-
-      - name: Checkout local repo
-        uses: actions/checkout@v3
-        with:
-          ref: generated
-          path: work/
-
-      - name: Update go.mod with the correct YGOT version
-        run: |
-          go mod edit -module github.com/srl-labs/ygotsrl/${{ env.MODULE_VERSION }}
-          go get github.com/openconfig/ygot@${{ env.YGOT_VERSION }}
-        working-directory: work
-
-      - name: cleanup tools from yang directory
-        run: |
-          rm -f nokia/srlinux-yang-models/srl_nokia/models/*/*tools*.yang
-
-      - name: Exclude YANG modifier statement if and when it is present in the models.
-        run: |
-           if grep -q '^\s*modifier ' nokia/srlinux-yang-models/srl_nokia/models/common/srl_nokia-common.yang; then
-               sed -i 's/modifier invert-match/\/\/modifier invert-match/g' nokia/srlinux-yang-models/srl_nokia/models/common/srl_nokia-common.yang
-               sed -i 's/modifier \"invert-match\"/\/\/modifier \"invert-match\"/g' nokia/srlinux-yang-models/srl_nokia/models/common/srl_nokia-common.yang
-           fi
-
-      - name: Run Code Generation
-        run: >
-          generator -output_file=work/ygotsrl.go
-          -logtostderr
-          -path=nokia/srlinux-yang-models 
-          -package_name=ygotsrl -generate_fakeroot -fakeroot_name=Device -compress_paths=false 
-          -shorten_enum_leaf_names 
-          -typedef_enum_with_defmod 
-          -enum_suffix_for_simple_union_enums 
-          -generate_rename 
-          -generate_append 
-          -generate_getters 
-          -generate_delete 
-          -generate_simple_unions 
-          -generate_populate_defaults 
-          -include_schema 
-          -exclude_state 
-          -yangpresence 
-          -include_model_data 
-          -generate_leaf_getters
-          -ignore_unsupported
-          nokia/srlinux-yang-models/srl_nokia/models/*/*.yang
-
-      - name: list work
-        run: |
-          ls
-        working-directory: work
-
-      - name: tag major and minor versions
-        run: |
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          go mod tidy
-          git add go.mod
-          git add go.sum
-          git add ygotsrl.go
-          git commit -m "Release ${{ env.SRLINUX_VERSION }}"
-          git push 
-          git tag -d ${{ env.SRLINUX_VERSION }}-${{ inputs.release_suffix }} || true
-          git push origin :${{ env.SRLINUX_VERSION }}-${{ inputs.release_suffix }} || true
-          git tag -a ${{ env.SRLINUX_VERSION }}-${{ inputs.release_suffix }} -m "Release ${{ env.SRLINUX_VERSION }}"
-          git push origin ${{ env.SRLINUX_VERSION }}-${{ inputs.release_suffix }}
-        working-directory: work
-
-  clean-working-directory:
-    runs-on: [ ubuntu-latest ]
-    steps:
-      - name: Clean working directory
-        shell: bash
-        run: |
-         cd $RUNNER_WORKSPACE
-         cd ..
-         rm -r *
+      - name: Publish structs
+        run: make release
