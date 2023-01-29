@@ -3,70 +3,68 @@
 
 ---
 
+This repository contains generated Go module that provides API for Nokia SR Linux Network OS. The module is generated with [ygot](https://github.com/openconfig/ygot) project.
+
 ygot (**Y**ANG **Go** **T**ools) is a collection of Go utilities that can be used to:
 
 * Generate a set of Go structures and enumerated values for a set of YANG modules, with associated helper methods.
 * Validate the contents of the Go structures against the YANG schema (e.g., validating range and regular expression constraints).
 * Render the Go structures to an output format - such as JSON, or a set of gNMI Notifications for use in a deployment of streaming telemetry.
 
-## Generated Go Structures from YANG
+## Usage
 
-This repository contains the generated Go structures and enumerated values for the SRLinux YANG Modules, which can be found on `https://github.com/nokia/srlinux-yang-models`
-The purpose is to remove boilerplate and allow developers to focus on writing code using these Go structures as a library.
+To use the generated Go package, users should first identify which SR Linux version(s) they would like to interact with, as the package is generated per each SR Linux release.
 
-The generator runs with following flags:
+For example, to start using the package generated for SR Linux v21.11.1 download the relevant module:
 
-```
-generator -output_file=work/ygotsrl.go
-  -logtostderr
-  -path=nokia/srlinux-yang-models 
-  -package_name=ygotsrl -generate_fakeroot -fakeroot_name=Device 
-  -compress_paths=false 
-  -shorten_enum_leaf_names 
-  -typedef_enum_with_defmod 
-  -enum_suffix_for_simple_union_enums 
-  -generate_rename 
-  -generate_append 
-  -generate_getters 
-  -generate_delete 
-  -generate_simple_unions 
-  -generate_populate_defaults 
-  -include_schema 
-  -exclude_state 
-  -yangpresence 
-  -include_model_data 
-  -generate_leaf_getters 
-  nokia/srlinux-yang-models/srl_nokia/models/*/*.yang
+```bash
+go get github.com/srl-labs/ygotsrl/v21 v21.11.1
 ```
 
-If you'd like to deviate from this behaviour, please follow the [`ygot`](https://github.com/openconfig/ygot) guidelines.
+and import the `ygotsrl` package from it:
+
+```go
+package main
+
+import (
+ "github.com/srl-labs/ygotsrl/v21"
+)
+
+func main() {
+  srl := new(ygotsrl.Device)
+}
+```
+
+### Versioning
+
+Each module is published with the tag matching SR Linux release number. All available releases can be browsed on the [tags](https://github.com/srl-labs/ygotsrl/tags) page.
+
+Because of the adherence to the SR Linux versioning convention, `ygotsrl` Go module has to artificially follow the SemVer rules. Branches are created per each major release - `v21`, `v22`, `v23` and so on. Make sure to use the correct major version string when importing the module.
+
+> **Warning**  
+> Because of the immutability of the Go package cache you might find that the latest tag for a given release might not work. In that case [check](https://github.com/srl-labs/ygotsrl/tags) if a tag with `-patchX` suffix exists and make sure to use them.
+> The list of releases for which patch releases have been issued:  
+>
+> * `22.11.1-patch1`
+> * `22.6.4-patch1`
+> * `22.6.3-patch1`
+> * `22.6.2-patch1`
+> * `22.6.1-patch1`
+
+## Package documentation
+
+Package documentation can be found at [pkg.go.dev](https://pkg.go.dev/github.com/srl-labs/ygotsrl/v22). [Switch](https://pkg.go.dev/github.com/srl-labs/ygotsrl/v22?tab=versions) the required major version number if necessary.
+
+## Generation flags
+
+The Go structures and enumerated values provided by this package are generated off of [SR Linux YANG Modules](https://github.com/nokia/srlinux-yang-models).
+
+The generator command used to generate the files can be found in the [Makefile](Makefile#L79).
+
+If you'd like to deviate from the chosen generator options, please follow the [`ygot`](https://github.com/openconfig/ygot) guidelines and regenerate the files manually.
 
 ## Repository structure
 
 The main branch of this repository contains only the documentation. To reveal the generated Go files for a given release select the tag that matches the SR Linux release version.
 
-For instance, tag `v22.6.2` corresponds to the SR Linux release 22.6.2.
-
-## Download
-
-There are several ways to download the Go files for a specific SR Linux release. The below examples are provided for `v22.6.2` version.
-
-### Clone with git
-
-Clone the yang files for a specific release with the following `git` command:
-
-```
-git clone -b v22.6.2 --depth 1 https://github.com/srl-labs/ygotsrl
-```
-
-### Download archives
-
-To download the proto files for a specific release in the `zip` or `tgz` archive, navigate to the GitHub [`tag`](https://github.com/srl-labs/ygotsrl/tags) page, which contains the links to the archives.
-
-If needed, the download link can be programmatically derived using the following rule:
-
-**for zip**
-`https://github.com/srl-labs/ygotsrl/archive/tags/` + `$tag` + `.zip`
-
-**for tar.gz**
-`https://github.com/srl-labs/ygotsrl/archive/tags/` + `$tag` + `.tar.gz`
+For instance, tag `v22.6.2-patch1` corresponds to the SR Linux release 22.6.2.
