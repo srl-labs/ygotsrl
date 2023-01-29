@@ -11,7 +11,8 @@ SRL_MAJOR_VER=$(shell echo ${SRLINUX_VERSION} | cut -d . -f 1)
 .ONESHELL:
 
 release: generate ## Main target that generates and releases Go structs.
-	git push origin ${SRL_MAJOR_VER}
+	# push generated code upstream as well as the new tag
+	git push --follow-tags origin ${SRL_MAJOR_VER}
 
 generate: install-ygot fetch-srl-yang fix-yang generate-structs checkout-branch create-go-module commit-and-tag ## Generate the structs, creates a commit and tag, but doesn't push to remote repo.
 
