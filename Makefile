@@ -9,6 +9,9 @@
 # SRLINUX_VERSION=v21.11.2 RELEASE_SUFFIX=rc1 make release
 # will do everything that `make generate` does plus pushing the files and tags to the remote
 #
+# Once package is uploaded on Github, one can refresh the Go package cache with:
+# GOPROXY=proxy.golang.org go list -m github.com/srl-labs/ygotsrl/v22@v22.11.1-patch1
+#
 # TODO (rdodin): add link to a tutorial
 
 .DEFAULT_GOAL := help
