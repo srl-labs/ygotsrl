@@ -1,3 +1,16 @@
+# Make target to generate and release ygot-generated Go API for Nokia SR Linux
+# usage exmaples:
+#
+# 1 to generate Go package but not releasing it:
+# SRLINUX_VERSION=v21.11.2 RELEASE_SUFFIX=rc1 make generate
+# will generate structs for srlinux 21.11.2, create a v21 branch (if needed), initialize Go package and commit and tag the result
+#
+# 2 to generate Go pacakge and publish it on GitHub:
+# SRLINUX_VERSION=v21.11.2 RELEASE_SUFFIX=rc1 make release
+# will do everything that `make generate` does plus pushing the files and tags to the remote
+#
+# TODO (rdodin): add link to a tutorial
+
 .DEFAULT_GOAL := help
 
 YGOT_VERSION ?= v0.24.4
