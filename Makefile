@@ -30,7 +30,9 @@ release: generate ## Main target that generates and releases Go structs.
 	# push generated code upstream as well as all lightweight and annotated tags
 	git push --tags origin ${SRL_MAJOR_VER}
 
-generate: install-ygot fetch-srl-yang fix-yang generate-structs checkout-branch create-go-module commit-and-tag ## Generate the structs, creates a commit and tag, but doesn't push to remote repo.
+generate-and-commit: generate commit-and-tag ## Generate the structs, creates a commit and tag, but doesn't push to remote repo.
+
+generate: install-ygot fetch-srl-yang fix-yang generate-structs checkout-branch create-go-module ## Generate the structs.
 
 install-ygot: ## Install ygot. The version is read from YGOT_VERSION env var. Defaults to 0.24.4.
 	go install github.com/openconfig/ygot/generator@${YGOT_VERSION}
@@ -99,6 +101,7 @@ generate-structs: ## Generate Go structs for YANG files using ygot generator.
 	generator -output_file=${OUTDIR}/ygotsrl.go \
 		-path=${WORKDIR}/srlinux-yang-models \
 		-package_name=ygotsrl -generate_fakeroot -fakeroot_name=Device -compress_paths=false \
+		-structs_split_files_count=10 \
 		-logtostderr \
 		-shorten_enum_leaf_names \
 		-typedef_enum_with_defmod \
