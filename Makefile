@@ -32,7 +32,7 @@ release: generate ## Main target that generates and releases Go structs.
 
 generate-and-commit: generate commit-and-tag ## Generate the structs, creates a commit and tag, but doesn't push to remote repo.
 
-generate: install-ygot fetch-srl-yang fix-yang generate-structs checkout-branch create-go-module ## Generate the structs.
+generate: install-ygot fetch-srl-yang fix-yang generate-structs checkout-branch create-go-module format ## Generate the structs.
 
 install-ygot: ## Install ygot. The version is read from YGOT_VERSION env var. Defaults to 0.24.4.
 	go install github.com/openconfig/ygot/generator@${YGOT_VERSION}
@@ -71,7 +71,9 @@ checkout-branch: ## Checkout to the branch matching the SR Linux's major release
 
 create-go-module: checkout-branch
 	# SRL_MAJOR_VER=$(shell echo ${SRLINUX_VERSION} | cut -d . -f 1)
-	cp ${OUTDIR}/ygotsrl.go .
+	# remove single go file that we generated before starting
+	# splitting files
+	rm -f ygotsrl.go .
 	go mod init ${GO_PKG_NAME}/${SRL_MAJOR_VER}
 	go mod tidy
 	if [ "${SRL_MAJOR_VER}" = "v22" ]; then go get github.com/openconfig/gnmi@v0.0.0-20220617175856-41246b1b3507; fi
@@ -131,7 +133,15 @@ GOFUMPT_FLAGS := -l -w .
 GODOT_CMD := docker run --rm -it -v $(CURDIR):/work ghcr.io/hellt/godot:1.4.11
 GODOT_FLAGS := -w .
 
-format: gofumpt godot # Apply Go formatters
+GOIMPORTS_CMD := docker run --rm -it -v $(CURDIR):/work ghcr.io/hellt/goimports:0.5.0
+GOIMPORTS_FLAGS := -w ${OUTDIR}/*
+
+format: goimports gofumpt godot # Apply Go formatters.
+	# copy files after formatting to .
+	cp -a ${OUTDIR}/* .
+
+goimports:
+	${GOIMPORTS_CMD} ${GOIMPORTS_FLAGS}
 
 gofumpt:
 	${GOFUMPT_CMD} ${GOFUMPT_FLAGS}
