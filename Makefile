@@ -68,6 +68,8 @@ checkout-branch: ## Checkout to the branch matching the SR Linux's major release
 	
 	set -e
 	git checkout ${SRL_MAJOR_VER}
+	# update from remote
+	git pull
 
 create-go-module: checkout-branch
 	# SRL_MAJOR_VER=$(shell echo ${SRLINUX_VERSION} | cut -d . -f 1)
