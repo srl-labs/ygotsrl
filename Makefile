@@ -98,10 +98,11 @@ remove-tools-schema: ## Delete tools schema files from SR Linux native YANG coll
 
 generate-structs: ## Generate Go structs for YANG files using ygot generator.
 	mkdir -p ${OUTDIR}
-	generator -output_file=${OUTDIR}/ygotsrl.go \
+	generator \
+		-output_dir=${OUTDIR} \
 		-path=${WORKDIR}/srlinux-yang-models \
 		-package_name=ygotsrl -generate_fakeroot -fakeroot_name=Device -compress_paths=false \
-		-structs_split_files_count=10 \
+		-structs_split_files_count=5 \
 		-logtostderr \
 		-shorten_enum_leaf_names \
 		-typedef_enum_with_defmod \
@@ -123,6 +124,20 @@ generate-structs: ## Generate Go structs for YANG files using ygot generator.
 cleanup: ## Remove work and output directories
 	rm -rf work
 	rm -rf output
+
+GOFUMPT_CMD := docker run --rm -it -e GOFUMPT_SPLIT_LONG_LINES=on -v $(CURDIR):/work ghcr.io/hellt/gofumpt:0.3.1
+GOFUMPT_FLAGS := -l -w .
+
+GODOT_CMD := docker run --rm -it -v $(CURDIR):/work ghcr.io/hellt/godot:1.4.11
+GODOT_FLAGS := -w .
+
+format: gofumpt godot # Apply Go formatters
+
+gofumpt:
+	${GOFUMPT_CMD} ${GOFUMPT_FLAGS}
+
+godot:
+	${GODOT_CMD} ${GODOT_FLAGS}
 
 help: # Yeah, it's not mine - https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
