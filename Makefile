@@ -30,7 +30,9 @@ release: generate ## Main target that generates and releases Go structs.
 	# push generated code upstream as well as all lightweight and annotated tags
 	git push --tags origin ${SRL_MAJOR_VER}
 
-generate: install-ygot fetch-srl-yang fix-yang generate-structs checkout-branch create-go-module commit-and-tag ## Generate the structs, creates a commit and tag, but doesn't push to remote repo.
+generate-and-commit: generate commit-and-tag ## Generate the structs, creates a commit and tag, but doesn't push to remote repo.
+
+generate: install-ygot fetch-srl-yang fix-yang generate-structs checkout-branch create-go-module format ## Generate the structs.
 
 install-ygot: ## Install ygot. The version is read from YGOT_VERSION env var. Defaults to 0.24.4.
 	go install github.com/openconfig/ygot/generator@${YGOT_VERSION}
@@ -66,10 +68,14 @@ checkout-branch: ## Checkout to the branch matching the SR Linux's major release
 	
 	set -e
 	git checkout ${SRL_MAJOR_VER}
+	# update from remote
+	git pull
 
 create-go-module: checkout-branch
 	# SRL_MAJOR_VER=$(shell echo ${SRLINUX_VERSION} | cut -d . -f 1)
-	cp ${OUTDIR}/ygotsrl.go .
+	# remove single go file that we generated before starting
+	# splitting files
+	rm -f ygotsrl.go .
 	go mod init ${GO_PKG_NAME}/${SRL_MAJOR_VER}
 	go mod tidy
 	if [ "${SRL_MAJOR_VER}" = "v22" ]; then go get github.com/openconfig/gnmi@v0.0.0-20220617175856-41246b1b3507; fi
@@ -96,9 +102,11 @@ remove-tools-schema: ## Delete tools schema files from SR Linux native YANG coll
 
 generate-structs: ## Generate Go structs for YANG files using ygot generator.
 	mkdir -p ${OUTDIR}
-	generator -output_file=${OUTDIR}/ygotsrl.go \
+	generator \
+		-output_dir=${OUTDIR} \
 		-path=${WORKDIR}/srlinux-yang-models \
 		-package_name=ygotsrl -generate_fakeroot -fakeroot_name=Device -compress_paths=false \
+		-structs_split_files_count=20 \
 		-logtostderr \
 		-shorten_enum_leaf_names \
 		-typedef_enum_with_defmod \
@@ -120,6 +128,28 @@ generate-structs: ## Generate Go structs for YANG files using ygot generator.
 cleanup: ## Remove work and output directories
 	rm -rf work
 	rm -rf output
+
+GOFUMPT_CMD := docker run --rm -it -e GOFUMPT_SPLIT_LONG_LINES=on -v $(CURDIR):/work ghcr.io/hellt/gofumpt:0.3.1
+GOFUMPT_FLAGS := -l -w .
+
+GODOT_CMD := docker run --rm -it -v $(CURDIR):/work ghcr.io/hellt/godot:1.4.11
+GODOT_FLAGS := -w .
+
+GOIMPORTS_CMD := docker run --rm -it -v $(CURDIR):/work ghcr.io/hellt/goimports:0.5.0
+GOIMPORTS_FLAGS := -w ${OUTDIR}/*
+
+format: goimports gofumpt godot # Apply Go formatters.
+	# copy files after formatting to .
+	cp -a ${OUTDIR}/* .
+
+goimports:
+	${GOIMPORTS_CMD} ${GOIMPORTS_FLAGS}
+
+gofumpt:
+	${GOFUMPT_CMD} ${GOFUMPT_FLAGS}
+
+godot:
+	${GODOT_CMD} ${GODOT_FLAGS}
 
 help: # Yeah, it's not mine - https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
