@@ -106,7 +106,7 @@ generate-structs: ## Generate Go structs for YANG files using ygot generator.
 		-output_dir=${OUTDIR} \
 		-path=${WORKDIR}/srlinux-yang-models \
 		-package_name=ygotsrl -generate_fakeroot -fakeroot_name=Device -compress_paths=false \
-		-structs_split_files_count=5 \
+		-structs_split_files_count=20 \
 		-logtostderr \
 		-shorten_enum_leaf_names \
 		-typedef_enum_with_defmod \
